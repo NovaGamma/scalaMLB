@@ -1,0 +1,30 @@
+package mlb
+
+case class CsvStructure(
+  date: Option[String],
+  season: Option[Int],
+  neutral: Option[Int],
+  playoff: Option[String],
+  team1: Option[String],
+  team2: Option[String],
+  elo1_pre: Option[Double],
+  elo2_pre: Option[Double],
+  elo_prob1: Option[Double],
+  elo_prob2: Option[Double],
+  elo1_post: Option[Double],
+  elo2_post: Option[Double],
+  rating1_pre: Option[Double],
+  rating2_pre: Option[Double],
+  pitcher1: Option[String],
+  pitcher2: Option[String],
+  pitcher1_rgs: Option[Double],
+  pitcher2_rgs: Option[Double],
+  pitcher1_adj: Option[Double],
+  pitcher2_adj: Option[Double],
+  rating_prob1: Option[Double],
+  rating_prob2: Option[Double],
+  rating1_post: Option[Double],
+  rating2_post: Option[Double],
+  score1: Option[Int],
+  score2: Option[Int]
+)

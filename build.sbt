@@ -1,4 +1,4 @@
-val scalaVersion = "3.3.0"
+val scala3Version = "3.3.0"
 val h2Version = "2.1.214"
 val scalaCsvVersion = "1.3.10"
 val zioVersion = "2.0.6"
@@ -12,7 +12,7 @@ lazy val root = (project in file("."))
     name := "mlb-api",
     version := "1.0",
 
-    scalaVersion := scalaVersion,
+    scalaVersion := scala3Version,
 
     libraryDependencies ++= Seq(
       "com.h2database" % "h2" % h2Version,

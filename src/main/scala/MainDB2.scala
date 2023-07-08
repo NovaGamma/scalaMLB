@@ -24,6 +24,8 @@ object MlbApi extends ZIOAppDefault {
     import AwayPlayers.*
     import HomeElos.*
     import AwayElos.*
+    import HomeMlbs.*
+    import AwayMlbs.*
 
     def convertCsvSeqToGame(csvRow: Seq[String]): Option[Game] = for {
             date <- Try(LocalDate.parse(csvRow(0))).toOption.map(GameDate.apply)
@@ -35,9 +37,11 @@ object MlbApi extends ZIOAppDefault {
             sy <- csvRow(1).toIntOption.flatMap(SeasonYear.safe)
             hs <- csvRow(24).toIntOption.flatMap(HomeScore.safe)
             as <- csvRow(25).toIntOption.flatMap(AwayScore.safe)
-            he <- csvRow(6).toDoubleOption.flatMap(HomeElo.safe)
-            ae <- csvRow(7).toDoubleOption.flatMap(AwayElo.safe)
-        } yield Game(date, sy, playoffRound, homeTeam, awayTeam, homePlayer, awayPlayer, hs, as, he, ae)
+            he <- csvRow(10).toDoubleOption.flatMap(HomeElo.safe)
+            ae <- csvRow(11).toDoubleOption.flatMap(AwayElo.safe)
+            hm <- csvRow(22).toDoubleOption.flatMap(HomeMlb.safe)
+            am <- csvRow(23).toDoubleOption.flatMap(AwayMlb.safe)
+        } yield Game(date, sy, playoffRound, homeTeam, awayTeam, homePlayer, awayPlayer, hs, as, he, ae, hm, am)
 
     val app: ZIO[ZConnectionPool, Throwable, Unit] = for {
         _ <- Console.printLine("Creation of the table")

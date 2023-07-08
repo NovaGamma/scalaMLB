@@ -34,7 +34,9 @@ object DataService {
           home_score INTEGER,
           away_score INTEGER,
           home_elo FLOAT,
-          away_elo FLOAT
+          away_elo FLOAT,
+          home_mlb FLOAT,
+          away_mlb FLOAT
           );"""
       );
     }
@@ -50,7 +52,7 @@ object DataService {
     val rows: List[Game.Row] = games.map(_.toRow)
         transaction {
             insert(
-                sql"INSERT INTO games(date, season_year, playoff_round, home_team, away_team, home_player, away_player, home_score, away_score, home_elo, away_elo)".values[Game.Row](rows)
+                sql"INSERT INTO games(date, season_year, playoff_round, home_team, away_team, home_player, away_player, home_score, away_score, home_elo, away_elo, home_mlb, away_mlb)".values[Game.Row](rows)
             )
         }
   }
@@ -64,7 +66,7 @@ object DataService {
   def latest(homeTeam: HomeTeam, awayTeam: AwayTeam): ZIO[ZConnectionPool, Throwable, Option[Game]] = {
     transaction {
       selectOne(
-        sql"SELECT date, season_year, playoff_round, home_team, away_team, home_player, away_player, home_score, away_score, home_elo, away_elo FROM games WHERE home_team = ${HomeTeam.unapply(homeTeam)} AND away_team = ${AwayTeam.unapply(awayTeam)} ORDER BY date DESC LIMIT 1".as[Game]
+        sql"SELECT date, season_year, playoff_round, home_team, away_team, home_player, away_player, home_score, away_score, home_elo, away_elo, home_mlb, away_mlb FROM games WHERE home_team = ${HomeTeam.unapply(homeTeam)} AND away_team = ${AwayTeam.unapply(awayTeam)} ORDER BY date DESC LIMIT 1".as[Game]
       )
     }
   }

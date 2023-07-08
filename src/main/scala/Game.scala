@@ -170,6 +170,37 @@ object AwayElos extends Elos{
     }
 }
 
+trait Mlbs {
+    type T = Double
+    given CanEqual[T, T] = CanEqual.derived
+    implicit val encoder: JsonEncoder[T] = JsonEncoder.double
+    implicit val decoder: JsonDecoder[T] = JsonDecoder.double
+}
+
+object HomeMlbs extends Mlbs{
+
+    opaque type HomeMlb <: Double = Double
+    override type T = HomeMlb
+    object HomeMlb {
+        def apply(rating: Double): HomeMlb = rating
+        def safe(value: Double): Option[HomeMlb] =
+            Option.when(value >= 0)(value)
+        def unapply(rating: HomeMlb): Double = rating
+    }
+}
+
+object AwayMlbs extends Mlbs{
+
+    opaque type AwayMlb <: Double = Double
+    override type T = AwayMlb
+    object AwayMlb {
+        def apply(rating: Double): AwayMlb = rating
+        def safe(value: Double): Option[AwayMlb] =
+            Option.when(value >= 0)(value)
+        def unapply(rating: AwayMlb): Double = rating
+    }
+}
+
 import GameDates.*
 import PlayoffRounds.*
 import SeasonYears.*
@@ -181,6 +212,8 @@ import HomePlayers.*
 import AwayPlayers.*
 import HomeElos.*
 import AwayElos.*
+import HomeMlbs.*
+import AwayMlbs.*
 
 final case class Game(
     date: GameDate,
@@ -193,7 +226,9 @@ final case class Game(
     homeScore: HomeScore,
     awayScore: AwayScore,
     homeElo: HomeElo,
-    awayElo: AwayElo
+    awayElo: AwayElo,
+    homeMlb: HomeMlb,
+    awayMlb: AwayMlb
 )
 
 object Game {
@@ -202,15 +237,15 @@ object Game {
   implicit val gameEncoder: JsonEncoder[Game] = DeriveJsonEncoder.gen[Game]
   implicit val gameDecoder: JsonDecoder[Game] = DeriveJsonDecoder.gen[Game]
 
-  def unapply(game: Game): (GameDate, SeasonYear, Option[PlayoffRound], HomeTeam, AwayTeam, HomePlayer, AwayPlayer, HomeScore, AwayScore, HomeElo, AwayElo) =
-    (game.date, game.season, game.playoff, game.homeTeam, game.awayTeam, game.homePlayer, game.awayPlayer, game.homeScore, game.awayScore, game.homeElo, game.awayElo)
+  def unapply(game: Game): (GameDate, SeasonYear, Option[PlayoffRound], HomeTeam, AwayTeam, HomePlayer, AwayPlayer, HomeScore, AwayScore, HomeElo, AwayElo, HomeMlb, AwayMlb) =
+    (game.date, game.season, game.playoff, game.homeTeam, game.awayTeam, game.homePlayer, game.awayPlayer, game.homeScore, game.awayScore, game.homeElo, game.awayElo, game.homeMlb, game.awayMlb)
 
   // a custom decoder from a tuple
-  type Row = (String, Int, Option[Int], String, String, String, String, Int, Int, Double, Double)
+  type Row = (String, Int, Option[Int], String, String, String, String, Int, Int, Double, Double, Double, Double)
 
   extension (g:Game)
     def toRow: Row =
-      val (d, y, p, h, a, hp, ap, sh, sa, eh, ea) = Game.unapply(g)
+      val (d, y, p, h, a, hp, ap, sh, sa, eh, ea, mh, ma) = Game.unapply(g)
       (
         GameDate.unapply(d).toString,
         SeasonYear.unapply(y),
@@ -222,12 +257,14 @@ object Game {
         HomeScore.unapply(sh),
         AwayScore.unapply(sa),
         HomeElo.unapply(eh),
-        AwayElo.unapply(ea)
+        AwayElo.unapply(ea),
+        HomeMlb.unapply(mh),
+        AwayMlb.unapply(ma)
         
       )
 
   implicit val jdbcDecoder: JdbcDecoder[Game] = JdbcDecoder[Row]().map[Game] { t =>
-      val (date, season, maybePlayoff, home, away, homePlayer, awayPlayer, homeScore, awayScore, homeElo, awayElo) = t
+      val (date, season, maybePlayoff, home, away, homePlayer, awayPlayer, homeScore, awayScore, homeElo, awayElo, homeMlb, awayMlb) = t
       Game(
         GameDate(LocalDate.parse(date)),
         SeasonYear(season),
@@ -239,7 +276,9 @@ object Game {
         HomeScore(homeScore),
         AwayScore(awayScore),
         HomeElo(homeElo),
-        AwayElo(awayElo)
+        AwayElo(awayElo),
+        HomeMlb(homeMlb),
+        AwayMlb(awayMlb)
       )
     }
 }

@@ -25,8 +25,8 @@ object DataService {
       execute(sql"""
           CREATE TABLE IF NOT EXISTS Games (
           date VARCHAR(255),
-          season INTEGER,
-          playoff VARCHAR(255),
+          season_year INTEGER,
+          playoff_round VARCHAR(255),
           home_team VARCHAR(3),
           away_team VARCHAR(3),
           home_player VARCHAR(255),
@@ -47,10 +47,10 @@ object DataService {
   def insertRows(games: List[Game]): ZIO[ZConnectionPool, Throwable, UpdateResult] = {
     val rows: List[Game.Row] = games.map(_.toRow)
         transaction {
-        insert(
-            sql"INSERT INTO games(date, season_year, playoff_round, home_team, away_team, home_player, away_player, home_score, away_score)".values[Game.Row](rows)
-        )
-    }
+            insert(
+                sql"INSERT INTO games(date, season_year, playoff_round, home_team, away_team, home_player, away_player, home_score, away_score)".values[Game.Row](rows)
+            )
+        }
   }
 
   val count: ZIO[ZConnectionPool, Throwable, Option[Int]] = transaction {

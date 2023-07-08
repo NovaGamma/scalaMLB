@@ -22,6 +22,8 @@ object MlbApi extends ZIOAppDefault {
     import AwayScores.*
     import HomePlayers.*
     import AwayPlayers.*
+    import HomeElos.*
+    import AwayElos.*
 
     def convertCsvSeqToGame(csvRow: Seq[String]): Option[Game] = for {
             date <- Try(LocalDate.parse(csvRow(0))).toOption.map(GameDate.apply)
@@ -33,7 +35,9 @@ object MlbApi extends ZIOAppDefault {
             sy <- csvRow(1).toIntOption.flatMap(SeasonYear.safe)
             hs <- csvRow(24).toIntOption.flatMap(HomeScore.safe)
             as <- csvRow(25).toIntOption.flatMap(AwayScore.safe)
-        } yield Game(date, sy, playoffRound, homeTeam, awayTeam, homePlayer, awayPlayer, hs, as)
+            he <- csvRow(6).toDoubleOption.flatMap(HomeElo.safe)
+            ae <- csvRow(7).toDoubleOption.flatMap(AwayElo.safe)
+        } yield Game(date, sy, playoffRound, homeTeam, awayTeam, homePlayer, awayPlayer, hs, as, he, ae)
 
     val app: ZIO[ZConnectionPool, Throwable, Unit] = for {
         _ <- Console.printLine("Creation of the table")
@@ -49,10 +53,10 @@ object MlbApi extends ZIOAppDefault {
         streamChunk <- stream
         chunkToList = streamChunk.toList
         _ <- insertRows(chunkToList)
+        _ <- Console.print("Insertion of rows succeed")
         _ <- ZIO.succeed(source.close())
         test <- latest(HomeTeam("CHW"), AwayTeam("DET"))
         _ <- Console.printLine(test)
-        _ <- Console.print("Insertion of rows succeed")
     } yield ()
 
     override def run: ZIO[Any, Throwable, Unit] =

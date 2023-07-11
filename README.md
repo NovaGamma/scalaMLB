@@ -5,17 +5,17 @@ This project is a program that retrieve information from a CSV file in order to 
 
 1. [ Getting Started ](#getting-started)
 2. [ Usage](#usage)
-3. [ Implementation Details](#implementation)
-	a. [ Tree of the project](#structure)
-	b. [ Data Structure in postgreSQL](#data-structure-postgresql)
-		- [ Database](#database)
-		- [ Functions](#functions)
-	c.[ Data Structure in scala](#data-structure-scala)
-		- [ Object Pattern](#object-pattern)
-		- [ Objects](#objects)
-		- [ Traits](#traits)
-		- [ Case class Game](#case-class-game)
-		- [ Object Game](#object-game)
+3. [ Implementation Details](#implementation)\
+	a. [ Tree of the project](#structure)\
+	b. [ Data Structure in postgreSQL](#data-structure-postgresql)\
+	&nbsp; &nbsp; &nbsp; 1) [ Database](#database)\
+	&nbsp; &nbsp; &nbsp; 2) [ Functions](#functions)\
+c.[ Data Structure in scala](#data-structure-scala)\
+	&nbsp; &nbsp; &nbsp; 1) [ Object Pattern](#object-pattern)\
+	&nbsp; &nbsp; &nbsp; 2) [ Objects](#objects)\
+	&nbsp; &nbsp; &nbsp; 3) [ Traits](#traits)\
+	&nbsp; &nbsp; &nbsp; 4) [ Case class Game](#case-class-game)\
+	&nbsp; &nbsp; &nbsp; 5) [ Object Game](#object-game)\
    	 d.[ Api Structure](#api-structure)
 5. [ Depedencies](#depedencies)
 6. [ Organization](#organization)

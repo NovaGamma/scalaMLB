@@ -3,8 +3,12 @@ package mlb
 import zio._
 import zio.jdbc._
 import zio.http._
+import zio.stream._
 
+import java.time.LocalDate
 import java.sql.Date
+import com.github.tototoshi.csv._
+import scala.util.Try
 
 object MlbApi extends ZIOAppDefault {
 
@@ -42,18 +46,72 @@ object MlbApi extends ZIOAppDefault {
       import Game._
       for {
         games: Chunk[Game] <- historyTeam(homeTeam)
-      } yield ZIO.succeed(Response.json(games.toJson).withStatus(Status.Ok))
+        res: Response = historyResponse(games)
+      } yield res
+    case Method.GET -> Root / "pitcher" / "history" / pitcher =>
+      import zio.json.EncoderOps
+      import Game._
+      for {
+        games: Chunk[Game] <- historyPitcher(pitcher)
+        res: Response = historyResponse(games)
+      } yield res
     case _ =>
       ZIO.succeed(Response.text("Not Found").withStatus(Status.NotFound))
   }.withDefaultErrorResponse
 
-  val appLogic: ZIO[ZConnectionPool & Server, Throwable, Unit] = for {
-    _ <- create *> insertRows
+  import GameDates.*
+  import PlayoffRounds.*
+  import SeasonYears.*
+  import HomeTeams.*
+  import AwayTeams.*
+  import HomeScores.*
+  import AwayScores.*
+  import HomePlayers.*
+  import AwayPlayers.*
+  import HomeElos.*
+  import AwayElos.*
+  import HomeMlbs.*
+  import AwayMlbs.*
+
+  def convertCsvSeqToGame(csvRow: Seq[String]): Option[Game] = for {
+    date <- Try(LocalDate.parse(csvRow(0))).toOption.map(GameDate.apply)
+    homeTeam = HomeTeam(csvRow(4))
+    awayTeam = AwayTeam(csvRow(5))
+    homePlayer = HomePlayer(csvRow(14))
+    awayPlayer = AwayPlayer(csvRow(15))
+    playoffRound: Option[PlayoffRound] = csvRow(3).toIntOption.flatMap(PlayoffRound.safe)
+    sy <- csvRow(1).toIntOption.flatMap(SeasonYear.safe)
+    hs <- csvRow(24).toIntOption.flatMap(HomeScore.safe)
+    as <- csvRow(25).toIntOption.flatMap(AwayScore.safe)
+    he <- csvRow(10).toDoubleOption.flatMap(HomeElo.safe)
+    ae <- csvRow(11).toDoubleOption.flatMap(AwayElo.safe)
+    hm <- csvRow(22).toDoubleOption.flatMap(HomeMlb.safe)
+    am <- csvRow(23).toDoubleOption.flatMap(AwayMlb.safe)
+  } yield Game(date, sy, playoffRound, homeTeam, awayTeam, homePlayer, awayPlayer, hs, as, he, ae, hm, am)
+
+  val app: ZIO[ZConnectionPool & Server, Throwable, Unit] = for {
+    _ <- Console.printLine("Creation of the table")
+    conn <- create
+    _ <- Console.printLine("Opening the csv file")
+    source <- ZIO.succeed(CSVReader.open("mlb_elo_latest.csv"))
+    _ <- Console.printLine("Convert csv to the game structure & insertion of rows into the DB")
+    stream = ZStream
+      .fromIterator[Seq[String]](source.iterator)
+      .map[Option[Game]](convertCsvSeqToGame)
+      .collectSome //retrieve all without None value
+      .runCollect
+    streamChunk <- stream
+    chunkToList = streamChunk.toList
+    _ <- insertRows(chunkToList)
+    _ <- Console.print("Insertion of rows succeed")
+    _ <- ZIO.succeed(source.close())
+    test <- latest(HomeTeam("CHW"), AwayTeam("DET"))
+    _ <- Console.printLine(test)
     _ <- Server.serve[ZConnectionPool](static ++ endpoints)
   } yield ()
 
   override def run: ZIO[Any, Throwable, Unit] =
-    appLogic.provide(createZIOPoolConfig >>> connectionPool, Server.default)
+    app.provide(createZIOPoolConfig >>> connectionPool, Server.default)
 }
 
 object ApiService {
@@ -74,6 +132,13 @@ object ApiService {
     game match
       case Some(g) => Response.json(g.toJson).withStatus(Status.Ok)
       case None => Response.text("No game found in historical data").withStatus(Status.NotFound)
+  }
+
+  def historyResponse(games: zio.Chunk[Game]): Response = {
+    if(games.isEmpty) then
+      Response.text("No game was found")
+    else
+      Response.json(games.toJson).withStatus(Status.Ok)
   }
 
   def predictionResponse(homeTeam: String, awayTeam: String, gameA: Option[Game], gameB: Option[Game]): Response = {

@@ -4,23 +4,37 @@ import zio._
 import zio.jdbc._
 import zio.http._
 
-
+/**
+ * Provides data base services for the MLB package.
+ */
 object DataService {
 
+  /**
+   * Creates the ZIO layer configuration for the connection pool.
+   */
   val createZIOPoolConfig: ULayer[ZConnectionPoolConfig] =
     ZLayer.succeed(ZConnectionPoolConfig.default)
 
+  /**
+   * Database connection properties.
+   */
   val properties: Map[String, String] = Map(
     "user" -> "postgres",
     "password" -> "postgres"
   )
 
+  /**
+   * Creates the connection pool layer.
+   */
   val connectionPool: ZLayer[ZConnectionPoolConfig, Throwable, ZConnectionPool] =
     ZConnectionPool.h2mem(
       database = "mlb",
       props = properties
     )
 
+  /**
+   * Creates the "Games" table if it doesn't exist.
+   */
   val create: ZIO[ZConnectionPool, Throwable, Unit] = transaction {
       execute(sql"""
           CREATE TABLE IF NOT EXISTS Games (
@@ -49,7 +63,12 @@ object DataService {
   import HomePlayers.* 
   import AwayPlayers.*
 
-  // Should be implemented to replace the `val insertRows` example above. Replace `Any` by the proper case class.
+  /**
+   * Inserts rows into the "Games" table.
+   *
+   * @param games The list of games to insert
+   * @return The result of the update operation
+   */
   def insertRows(games: List[Game]): ZIO[ZConnectionPool, Throwable, UpdateResult] = {
     val rows: List[Game.Row] = games.map(_.toRow)
         transaction {
@@ -59,12 +78,24 @@ object DataService {
         }
   }
 
+  /**
+   * Counts the number of rows in the "Games" table.
+   *
+   * @return The count of rows as an option
+   */
   val count: ZIO[ZConnectionPool, Throwable, Option[Int]] = transaction {
     selectOne(
       sql"SELECT COUNT(*) FROM games".as[Int]
     )
   }
 
+  /**
+   * Retrieves the latest game between the specified home and away teams.
+   *
+   * @param homeTeam The home team
+   * @param awayTeam The away team
+   * @return The latest game as an option
+   */
   def latest(homeTeam: HomeTeam, awayTeam: AwayTeam): ZIO[ZConnectionPool, Throwable, Option[Game]] = {
     transaction {
       selectOne(
@@ -73,6 +104,12 @@ object DataService {
     }
   }
 
+  /**
+   * Retrieves the game history of the specified team.
+   *
+   * @param team The team name
+   * @return The game history as a chunk of games
+   */
   def historyTeam(team: String): ZIO[ZConnectionPool, Throwable, zio.Chunk[Game]] = {
     transaction {
       selectAll(
@@ -81,6 +118,12 @@ object DataService {
     }
   }
 
+  /**
+   * Retrieves the game history of the specified pitcher.
+   *
+   * @param pitcher The pitcher name
+   * @return The game history as a chunk of games
+   */
   def historyPitcher(pitcher: String): ZIO[ZConnectionPool, Throwable, zio.Chunk[Game]] = {
     transaction {
       selectAll(
@@ -89,6 +132,12 @@ object DataService {
     }
   }
 
+  /**
+   * Retrieves the latest game of the specified team.
+   *
+   * @param team The team name
+   * @return The latest game as an option
+   */
   def realLatest(team: String): ZIO[ZConnectionPool, Throwable, Option[Game]] = {
     transaction {
       selectOne(
@@ -97,6 +146,13 @@ object DataService {
     }
   }
 
+  /**
+   * Retrieves the number of victories and defeats of the specified team in the given season.
+   *
+   * @param team The team name
+   * @param season The season year
+   * @return The number of victories and defeats as an option of ZResultSet
+   */
   def victoriesAndDefeats(team: String, season: SeasonYear): ZIO[ZConnectionPool, Throwable, Option[zio.jdbc.ZResultSet]] = {
     transaction {
       selectOne(

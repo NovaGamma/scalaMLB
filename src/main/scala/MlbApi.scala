@@ -10,6 +10,9 @@ import java.sql.Date
 import com.github.tototoshi.csv._
 import scala.util.Try
 
+/**
+ * Provides the MLB API functionality.
+ */
 object MlbApi extends ZIOAppDefault {
 
   import DataService._
@@ -17,31 +20,41 @@ object MlbApi extends ZIOAppDefault {
   import HomeTeams._
   import AwayTeams._
 
+  /**
+   * Defines the static routes for the API.
+   */
   val static: App[Any] = Http.collect[Request] {
     case Method.GET -> Root / "text" => Response.text("Hello MLB Fans!")
     case Method.GET -> Root / "json" => Response.json("""{"greetings": "Hello MLB Fans!"}""")
   }.withDefaultErrorResponse
 
+  /**
+   * Defines the API endpoints.
+   */
   val endpoints: App[ZConnectionPool] = Http.collectZIO[Request] {
     case Method.GET -> Root / "init" =>
       ZIO.succeed(Response.text("Not Implemented").withStatus(Status.NotImplemented))
     case Method.GET -> Root / "game" / "latest" / homeTeam / awayTeam =>
+      // Retrieve the latest game between the specified home team and away team
       for {
         game: Option[Game] <- latest(HomeTeam(homeTeam), AwayTeam(awayTeam))
         res: Response = latestGameResponse(game)
       } yield res
     case Method.GET -> Root / "game" / "predict" / homeTeam / awayTeam =>
+      // Predict the outcome of the game between the specified home team and away team
       for {
         gameA: Option[Game] <- realLatest(homeTeam)
         gameB: Option[Game] <- realLatest(awayTeam)
         res: Response = predictionResponse(homeTeam, awayTeam, gameA, gameB)
       } yield res
     case Method.GET -> Root / "games" / "count" =>
+      // Count the number of games in the data
       for {
         count: Option[Int] <- count
         res: Response = countResponse(count)
       } yield res
     case Method.GET -> Root / "games" / "history" / homeTeam =>
+      // Retrieve the game history for the specified team
       import zio.json.EncoderOps
       import Game._
       for {
@@ -49,6 +62,7 @@ object MlbApi extends ZIOAppDefault {
         res: Response = historyResponse(games)
       } yield res
     case Method.GET -> Root / "pitcher" / "history" / pitcher =>
+      // Retrieve the game history for the specified pitcher
       import zio.json.EncoderOps
       import Game._
       for {
@@ -56,6 +70,7 @@ object MlbApi extends ZIOAppDefault {
         res: Response = historyResponse(games)
       } yield res
     case _ =>
+      // Endpoint not found
       ZIO.succeed(Response.text("Not Found").withStatus(Status.NotFound))
   }.withDefaultErrorResponse
 
@@ -73,6 +88,12 @@ object MlbApi extends ZIOAppDefault {
   import HomeMlbs.*
   import AwayMlbs.*
 
+  /**
+   * Converts a CSV row to a Game object.
+   *
+   * @param csvRow The CSV row
+   * @return An option of Game object
+   */
   def convertCsvSeqToGame(csvRow: Seq[String]): Option[Game] = for {
     date <- Try(LocalDate.parse(csvRow(0))).toOption.map(GameDate.apply)
     homeTeam = HomeTeam(csvRow(4))
@@ -89,6 +110,9 @@ object MlbApi extends ZIOAppDefault {
     am <- csvRow(23).toDoubleOption.flatMap(AwayMlb.safe)
   } yield Game(date, sy, playoffRound, homeTeam, awayTeam, homePlayer, awayPlayer, hs, as, he, ae, hm, am)
 
+  /**
+   * The main application logic.
+   */
   val app: ZIO[ZConnectionPool & Server, Throwable, Unit] = for {
     _ <- Console.printLine("Creation of the table")
     conn <- create
@@ -121,12 +145,24 @@ object ApiService {
   import HomeTeams._
   import AwayTeams._
 
+  /**
+   * Constructs a response for the count endpoint.
+   *
+   * @param count The count of games
+   * @return The response
+   */
   def countResponse(count: Option[Int]): Response = {
     count match
       case Some(c) => Response.text(s"$c game(s) in historical data").withStatus(Status.Ok)
       case None => Response.text("No game in historical data").withStatus(Status.NotFound)
   }
 
+  /**
+   * Constructs a response for the latest game endpoint.
+   *
+   * @param game The latest game
+   * @return The response
+   */
   def latestGameResponse(game: Option[Game]): Response = {
     println(game)
     game match
@@ -134,6 +170,12 @@ object ApiService {
       case None => Response.text("No game found in historical data").withStatus(Status.NotFound)
   }
 
+  /**
+   * Constructs a response for the game history endpoint.
+   *
+   * @param games The game history
+   * @return The response
+   */
   def historyResponse(games: zio.Chunk[Game]): Response = {
     if(games.isEmpty) then
       Response.text("No game was found")
@@ -141,19 +183,31 @@ object ApiService {
       Response.json(games.toJson).withStatus(Status.Ok)
   }
 
+  /**
+   * Constructs a response for the game prediction endpoint.
+   *
+   * @param homeTeam The home team name
+   * @param awayTeam The away team name
+   * @param gameA The latest game for the home team
+   * @param gameB The latest game for the away team
+   * @return The response
+   */
   def predictionResponse(homeTeam: String, awayTeam: String, gameA: Option[Game], gameB: Option[Game]): Response = {
+    // Retrieve the Elo ratings for the home team
     val maybeEloA = gameA.flatMap { game =>
     if game.homeTeam == HomeTeam(homeTeam) then Some(game.homeElo)
     else if game.awayTeam == AwayTeam(homeTeam) then Some(game.awayElo)
     else None
   }
   
+    // Retrieve the Elo ratings for the away team
     val maybeEloB = gameB.flatMap { game =>
       if game.homeTeam == HomeTeam(awayTeam) then Some(game.homeElo)
       else if game.awayTeam == AwayTeam(awayTeam) then Some(game.awayElo)
       else None
     }
 
+    // Calculate the win probability based on Elo ratings
     val result = (maybeEloA, maybeEloB) match {
       case (Some(eloA), Some(eloB)) =>
         val prediction: Double = 1 / (1 + math.pow(10, (eloB - eloA) / 400))

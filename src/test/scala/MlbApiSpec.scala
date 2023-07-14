@@ -1,20 +1,27 @@
 package mlb
 
-import munit._
 import zio.http._
+import zio._
+import zio.jdbc._
+import zio.stream._
+import zio.test._
+import zio.test.Assertion._
+import io.lemonlabs.uri.{Url, QueryString}
 
-class MlbApiSpec extends munit.ZSuite {
+import mlb.MlbApiSpec
 
-  val app: App[Any] = mlb.MlbApi.static
 
-  testZ("should be ok") {
+class MlbApiSpec extends munit.FunSuite {
 
-    val req = Request.get(URL(Root / "Hello MLB Fans!"))
-    assertZ(app.runZIO(req).isSuccess)
-  }
-
-  testZ("should be ko") {
-    val req = Request.get(URL(Root))
-    assertZ(app.runZIO(req).isFailure)
-  }
+  val app: App[Any] = MlbApi.static
+    test("Endpoint: /text") {
+     val url = URL.decode("http://localhost:8080/text")
+      val req = url match {
+        case Right(value) => Request.get(value).body.asString
+        case Left(exception) => ZIO.fail(exception)
+      }
+      println(s"req response: ${req.map(req => req.toArray)}")
+      assertZIO(req)(equalTo("Hello MLB Fans!")) 
+    }
+  
 }

@@ -147,16 +147,31 @@ object DataService {
   }
 
   /**
-   * Retrieves the number of victories and defeats of the specified team in the given season.
+   * Retrieves the victories of the specified team in the given season.
    *
    * @param team The team name
    * @param season The season year
-   * @return The number of victories and defeats as an option of ZResultSet
+   * @return The list of victories as a zio Chunk
    */
-  def victoriesAndDefeats(team: String, season: SeasonYear): ZIO[ZConnectionPool, Throwable, Option[zio.jdbc.ZResultSet]] = {
+  def victoriesTeam(team: String, season: SeasonYear): ZIO[ZConnectionPool, Throwable, zio.Chunk[Game]] = {
     transaction {
-      selectOne(
-        sql"SELECT (SELECT COUNT(*) FROM games WHERE season_year = ${SeasonYear.unapply(season)} AND ((home_team = ${HomeTeam.unapply(HomeTeam(team))} AND home_score > away_score) OR(away_team = ${HomeTeam.unapply(HomeTeam(team))} AND away_score > home_score))) AS nb_victory,(SELECT COUNT(*) FROM games     WHERE season_year = ${SeasonYear.unapply(season)} AND ((home_team = ${HomeTeam.unapply(HomeTeam(team))} AND home_score < away_score) OR (away_team = ${HomeTeam.unapply(HomeTeam(team))} AND away_score < home_score))) AS nb_defeat;"
+      selectAll(
+        sql"SELECT date, season_year, playoff_round, home_team, away_team, home_player, away_player, home_score, away_score, home_elo, away_elo, home_mlb, away_mlb FROM games WHERE season_year = ${SeasonYear.unapply(season)} AND ((home_team = ${HomeTeam.unapply(HomeTeam(team))} AND home_score > away_score) OR (away_team = ${HomeTeam.unapply(HomeTeam(team))} AND away_score > home_score))".as[Game]
+      )
+    }
+  }
+
+  /**
+   * Retrieves the defeats of the specified team in the given season.
+   *
+   * @param team The team name
+   * @param season The season year
+   * @return The list of defeats as a zio Chunk
+   */
+  def defeatsTeam(team: String, season: SeasonYear): ZIO[ZConnectionPool, Throwable, zio.Chunk[Game]] = {
+    transaction {
+      selectAll(
+        sql"SELECT date, season_year, playoff_round, home_team, away_team, home_player, away_player, home_score, away_score, home_elo, away_elo, home_mlb, away_mlb FROM games WHERE season_year = ${SeasonYear.unapply(season)} AND ((home_team = ${HomeTeam.unapply(HomeTeam(team))} AND home_score < away_score) OR (away_team = ${HomeTeam.unapply(HomeTeam(team))} AND away_score < home_score))".as[Game]
       )
     }
   }

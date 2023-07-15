@@ -9,6 +9,7 @@ import java.time.LocalDate
 import java.sql.Date
 import com.github.tototoshi.csv._
 import scala.util.Try
+import mlb.SeasonYears.SeasonYear
 
 /**
  * Provides the MLB API functionality.
@@ -61,6 +62,7 @@ object MlbApi extends ZIOAppDefault {
         games: Chunk[Game] <- historyTeam(homeTeam)
         res: Response = historyResponse(games)
       } yield res
+    
     case Method.GET -> Root / "pitcher" / "history" / pitcher =>
       // Retrieve the game history for the specified pitcher
       import zio.json.EncoderOps
@@ -68,6 +70,14 @@ object MlbApi extends ZIOAppDefault {
       for {
         games: Chunk[Game] <- historyPitcher(pitcher.replace("%20", " "))
         res: Response = historyResponse(games)
+      } yield res
+    case Method.GET -> Root / "team" / "victory_defeat" / team / year =>
+      import zio.json.EncoderOps
+      import Game._
+      for {
+        victories: Chunk[Game] <- victoriesTeam(team, SeasonYear(year.toInt))
+        defeats: Chunk[Game] <- defeatsTeam(team, SeasonYear(year.toInt))
+        res: Response = victoryDefeatResponse(victories, defeats)
       } yield res
     case _ =>
       // Endpoint not found
@@ -165,7 +175,6 @@ object ApiService {
    * @return The response
    */
   def latestGameResponse(game: Option[Game]): Response = {
-    println(game)
     game match
       case Some(g) => Response.json(g.toJson).withStatus(Status.Ok)
       case None => Response.text("No game found in historical data").withStatus(Status.NotFound)
@@ -179,9 +188,29 @@ object ApiService {
    */
   def historyResponse(games: zio.Chunk[Game]): Response = {
     if(games.isEmpty) then
-      Response.text("No game was found")
+      Response.text("No game was found").withStatus(Status.NotFound)
     else
       Response.json(games.toJson).withStatus(Status.Ok)
+  }
+
+  /**
+   * Constructs a response for the victory and defeat endpoint.
+   *
+   * @param victories The list of victories as a zio Chunk
+   * @param defeats The list of defeats as a zio Chunk
+   * @return The response
+   */
+  def victoryDefeatResponse(victories: zio.Chunk[Game], defeats: zio.Chunk[Game]): Response = {
+    val winsCount = victories.length
+    val lossesCount = defeats.length
+
+    val json = s"""
+    	{
+    		victories: '$winsCount',
+    		defeats: '$lossesCount'
+    	}
+    """
+    Response.json(json).withStatus(Status.Ok)
   }
 
   /**

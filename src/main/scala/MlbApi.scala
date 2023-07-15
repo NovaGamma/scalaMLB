@@ -131,6 +131,7 @@ object MlbApi extends ZIOAppDefault {
     _ <- ZIO.succeed(source.close())
     test <- latest(HomeTeam("CHW"), AwayTeam("DET"))
     _ <- Console.printLine(test)
+    _ <- Console.printLine("Server started on http://localhost:8080")
     _ <- Server.serve[ZConnectionPool](static ++ endpoints)
   } yield ()
 

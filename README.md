@@ -222,6 +222,7 @@ We will explain each endpoints :
 | /games/count| Count the number of games in the data |
 | /games/history/{homeTeam} | Retrieve the game history for the specified team |
 | /pitcher/history/{pitcher} | Retrieve the game history for the specified pitcher |
+| /team/victory_defeat/{team}/{year} | Retrieve all the victory and defeat of a specific team in a specific season year | 
 | Not Found| Endpoint not found |
 
 ### <a id="test"></a> Tests
@@ -241,6 +242,7 @@ But we test them in Postman, here is the output for each one :
 - `/games/count` : ![alt text](postmanTests/endpoint_game_count.png)
 - `/games/history/{homeTeam}` : ![alt text](postmanTests/endpoint_games_history_homeTeam.png)
 - `/pitcher/history/{pitcher}` : ![alt text](postmanTests/endpoint_pitcher_history_pitcher.png)
+- `/team/victory_defeat/{team}/{year}`: ![alt text](postmanTests/endpoint_team_victoryDefeat_team_year.png)
 - `Not found` : ![alt text](postmanTests/endpoint_not_found.png)
 
 

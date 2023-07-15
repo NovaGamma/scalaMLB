@@ -108,4 +108,17 @@ class MlbApiSpec extends munit.ZSuite {
     assertZ(result.isSuccess)
     assertZ(result.map(_.status.code == Status.Ok.code))
   } 
+
+  /**
+  * Test the /pitcher/history/{pitcher} endpoint
+  */
+  testZ("should be Victory and Defeat of a Team ") {
+    val team = "DET"
+    val year = 2021
+    val req = Request.get(URL(Root / "team" / "victory_defeat" / team / year))
+    val result = endpoints.runZIO(req)
+    
+    assertZ(result.isSuccess)
+    assertZ(result.map(_.status.code == Status.Ok.code))
+  } 
 }

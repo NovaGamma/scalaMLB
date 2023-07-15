@@ -10,13 +10,14 @@ This project is a program that retrieve information from a CSV file in order to 
 	b. [ Data Structure in postgreSQL](#data-structure-postgresql)\
 	&nbsp; &nbsp; &nbsp; 1) [ Database](#database)\
 	&nbsp; &nbsp; &nbsp; 2) [ Functions](#functions)\
-c.[ Data Structure in scala](#data-structure-scala)\
+    c.[ Data Structure in scala](#data-structure-scala)\
 	&nbsp; &nbsp; &nbsp; 1) [ Object Pattern](#object-pattern)\
 	&nbsp; &nbsp; &nbsp; 2) [ Objects](#objects)\
 	&nbsp; &nbsp; &nbsp; 3) [ Traits](#traits)\
 	&nbsp; &nbsp; &nbsp; 4) [ Case class Game](#case-class-game)\
 	&nbsp; &nbsp; &nbsp; 5) [ Object Game](#object-game)\
-   	 d.[ Api Structure](#api-structure)
+   	d.[ Api Structure](#api-structure)\
+    e.[ Tests](#tests)
 5. [ Depedencies](#depedencies)
 6. [ Organization](#organization)
 7. [ Authors](#authors)
@@ -56,20 +57,16 @@ src
 │  └─ scala                 
 │     ├─ DataService.scala  
 │     ├─ Game.scala         
-│     ├─ MainDB2.scala      
 │     └─ MlbApi.scala       
 └─ test                     
    └─ scala                 
-      ├─ MlbApiSpec.scala   
-      └─ MySuite.scala          
+      └─ MlbApiSpec.scala       
 ```
 
 - `DataService.scala`: This file will interact with the database : creation of the ZIO Pool, connection to the pool with postgre properties, creation of the database, some queries...
 - `Game.scala`: Defines the `Game` case class, which represents one Game. 
-- `MainDB.scala`: The entry point of the program. It handles the execution, including reading and parsing the JSOCSVN file, instert into the database and deals with the endpoints
-- `MlbApi.scala`: Contains all the different endpoints we thought it was useful
+- `MlbApi.scala`: Contains all the different endpoints we thought it was useful. It is the entry point of the program. It handles the execution, including reading and parsing the CSV file, instert into the database and start the server
 - `test/MlbApiSpec.scala`: Contains the tests to check if our api implementation is correct. 
-- `test/MySuite.scala`: Contains the tests to check if our databse implementation is correct. 
 
 You can run them using: 
 ```
@@ -81,7 +78,6 @@ The program follows these steps :
 1. Open & Read CSV file : The program will open the file we specify in the `CSVReader`
 2. Converting CSV to our structure & Insertion in the DB : The program verifies the CSV file and convert each row into our game structure. Then, it inserters each rows into the table.
 3. Play with it: It is time to play with it retrieving information you want from the api
-
 
 
 ### <a id="data-structure-postgresql"></a> Data Strucure in PostgreSQL
@@ -212,8 +208,41 @@ The Game object serves as a final object that incorporates everything defined in
 - toRow extension method for converting a Game object into a row tuple.
 - jdbcDecoder for custom JDBC decoding of rows into Game objects.
 
-### Api Structure
-...
+### <a id="api-structure"></a> Api Structure
+
+We will explain each endpoints :
+
+| Endpoint | Description |
+| --- | --- |
+| /text| Static route which output is a text: <pre>"Hello MLB Fans!"</pre>|
+| /json | Static route which output is a json:  <pre>{"greetings": "Hello MLB Fans!"}</pre>|
+| /init | Not implemented |
+| /game/latest/{homeTeam}/{awayTeam}| Retrieve the latest game between the specified home team and away team |
+| /game/predict/{homeTeam}/{awayTeam} | Predict the outcome of the game between the specified home team and away team |
+| /games/count| Count the number of games in the data |
+| /games/history/{homeTeam} | Retrieve the game history for the specified team |
+| /pitcher/history/{pitcher} | Retrieve the game history for the specified pitcher |
+| Not Found| Endpoint not found |
+
+### <a id="test"></a> Tests
+
+It was difficult to test our endpoints using scala (not the static ones but the others) because the type was a ZConnectionPool so we didn't figured how to do this (we can see what we try to do in the file `MlbApiSpec.scala`.
+
+But we test them in Postman, here is the output for each one :
+
+#### Static Route
+- `/text`: ![alt text](postmanTests/static_text.png)
+- `/json`: ![alt text](postmanTests/static_json.png)
+
+#### Database Endpoints
+- `/init`: ![alt text](postmanTests/endpoint_init.png)
+- `/game/latest/{homeTeam}/{awayTeam}`: ![alt text](postmanTests/endpoint_game_latest_homeTeam_awayTeam.png)
+- `/game/predict/{homeTeam}/{awayTeam}` : ![alt text](postmanTests/endpoint_game_predict_homeTeam_awayTeam.png)
+- `/games/count` : ![alt text](postmanTests/endpoint_game_count.png)
+- `/games/history/{homeTeam}` : ![alt text](postmanTests/endpoint_games_history_homeTeam.png)
+- `/pitcher/history/{pitcher}` : ![alt text](postmanTests/endpoint_pitcher_history_pitcher.png)
+- `Not found` : ![alt text](postmanTests/endpoint_not_found.png)
+
 
 ## <a id="depedencies"></a> Dependencies
 We use the entire ZIO library as it was suggested. In this library, we use :
@@ -240,8 +269,8 @@ Finally, we used imports from Scala utils to deal with errors in native way :
 This project was different from the Sudoku one, it required more organizations. What we did is : 
 - CSV to Database, connection, creation  of the tables, data structure ... : BLANC & JAMINON using LiveShare extension
 - API : AUPIAS--BERTHY
-- Test :
-- Handling errors : 
+- Test : BLANC
+- Handling errors : JAMINON & AUPIAS--BERTHY
 - Documentation : everyone
 
 ## <a id="authors"></a>  Authors

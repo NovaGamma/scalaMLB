@@ -66,7 +66,7 @@ object MlbApi extends ZIOAppDefault {
       import zio.json.EncoderOps
       import Game._
       for {
-        games: Chunk[Game] <- historyPitcher(pitcher)
+        games: Chunk[Game] <- historyPitcher(pitcher.replace("%20", " "))
         res: Response = historyResponse(games)
       } yield res
     case _ =>
@@ -131,6 +131,7 @@ object MlbApi extends ZIOAppDefault {
     _ <- ZIO.succeed(source.close())
     test <- latest(HomeTeam("CHW"), AwayTeam("DET"))
     _ <- Console.printLine(test)
+    _ <- Console.printLine("Server started on http://localhost:8080")
     _ <- Server.serve[ZConnectionPool](static ++ endpoints)
   } yield ()
 

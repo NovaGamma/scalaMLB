@@ -66,7 +66,7 @@ object MlbApi extends ZIOAppDefault {
       import zio.json.EncoderOps
       import Game._
       for {
-        games: Chunk[Game] <- historyPitcher(pitcher)
+        games: Chunk[Game] <- historyPitcher(pitcher.replace("%20", " "))
         res: Response = historyResponse(games)
       } yield res
     case _ =>

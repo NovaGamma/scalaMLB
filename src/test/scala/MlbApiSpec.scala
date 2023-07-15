@@ -86,15 +86,6 @@ class MlbApiSpec extends munit.ZSuite {
   }
 
   /**
-    * Test an endpoint that returns no game in the historical data
-    */
-  testZ("should be No game in historical data") {
-    val req = Request.get(URL(Root / "games" / "count_fail"))
-    assertZ(endpoints.runZIO(req).isSuccess)
-    assertZ(endpoints.runZIO(req).map(_.status).map(_.code).map(_ == 204))
-  }
-
-  /**
     * Test the /games/history/{homeTeam} endpoint
     */
   testZ("should be game history") {

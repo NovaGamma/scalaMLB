@@ -224,7 +224,7 @@ We will explain each endpoints :
 | /pitcher/history/{pitcher} | Retrieve the game history for the specified pitcher |
 | Not Found| Endpoint not found |
 
-### <a id="test"></a> Tests
+### <a id="tests"></a> Tests
 
 It was difficult to test our endpoints using scala (not the static ones but the others) because the type was a ZConnectionPool so we didn't figured how to do this (we can see what we try to do in the file `MlbApiSpec.scala`.
 

@@ -72,6 +72,7 @@ object MlbApi extends ZIOAppDefault {
         res: Response = historyResponse(games)
       } yield res
     case Method.GET -> Root / "team" / "victory_defeat" / team / year =>
+      // Retrieve all the victory and defeat of a specific team in a specific season year
       import zio.json.EncoderOps
       import Game._
       for {
